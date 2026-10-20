@@ -2442,8 +2442,8 @@ class App(FastAPI):
 
             inference_client = InferenceClient()
 
-        @router.post("/vibe-edit/")
-        @router.post("/vibe-edit")
+        @router.post("/vibe-edit/", dependencies=[Depends(login_check)])
+        @router.post("/vibe-edit", dependencies=[Depends(login_check)])
         async def vibe_edit(body: VibeEditBody):
             if not blocks.vibe_mode:
                 raise HTTPException(
@@ -2535,8 +2535,8 @@ History:
                 "reasoning": reasoning,
             }
 
-        @router.post("/undo-vibe-edit/")
-        @router.post("/undo-vibe-edit")
+        @router.post("/undo-vibe-edit/", dependencies=[Depends(login_check)])
+        @router.post("/undo-vibe-edit", dependencies=[Depends(login_check)])
         async def undo_vibe_edit(hash: str = Body(..., embed=True)):
             if not blocks.vibe_mode:
                 raise HTTPException(
@@ -2545,6 +2545,11 @@ History:
                 )
 
             from gradio.http_server import GRADIO_WATCH_DEMO_PATH
+
+            # Snapshot names are server-generated 32-char hex; reject anything
+            # else before it reaches the filesystem (prevents traversal).
+            if len(hash) != 32 or any(c not in "0123456789abcdef" for c in hash):
+                raise HTTPException(status_code=400, detail="Invalid snapshot hash")
 
             snapshot_file = vibe_edit_history_dir / f"{hash}.py"
 
@@ -2562,8 +2567,8 @@ History:
 
             return {"success": True}
 
-        @router.get("/vibe-code/")
-        @router.get("/vibe-code")
+        @router.get("/vibe-code/", dependencies=[Depends(login_check)])
+        @router.get("/vibe-code", dependencies=[Depends(login_check)])
         async def get_vibe_code():
             if not blocks.vibe_mode:
                 raise HTTPException(
@@ -2586,8 +2591,8 @@ History:
                     status_code=500, detail=f"Error reading file: {str(e)}"
                 ) from e
 
-        @router.post("/vibe-code/")
-        @router.post("/vibe-code")
+        @router.post("/vibe-code/", dependencies=[Depends(login_check)])
+        @router.post("/vibe-code", dependencies=[Depends(login_check)])
         async def update_vibe_code(body: VibeCodeBody):
             if not blocks.vibe_mode:
                 raise HTTPException(
@@ -2606,8 +2611,8 @@ History:
                     status_code=500, detail=f"Error writing file: {str(e)}"
                 ) from e
 
-        @router.post("/vibe-starter-queries/")
-        @router.post("/vibe-starter-queries")
+        @router.post("/vibe-starter-queries/", dependencies=[Depends(login_check)])
+        @router.post("/vibe-starter-queries", dependencies=[Depends(login_check)])
         async def get_vibe_starter_queries():
             if not blocks.vibe_mode:
                 raise HTTPException(
